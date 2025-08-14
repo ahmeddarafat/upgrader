@@ -59,6 +59,7 @@ class Upgrader with WidgetsBindingObserver {
     UpgraderDevice? upgraderDevice,
     UpgraderOS? upgraderOS,
     this.willDisplayUpgrade,
+    this.packageName,
   })  : _state = UpgraderState(
           client: client ?? http.Client(),
           clientHeaders: clientHeaders,
@@ -104,6 +105,8 @@ class Upgrader with WidgetsBindingObserver {
   /// Track the initialization future so that [initialize] can be called multiple times.
   Future<bool>? _futureInit;
 
+  String? packageName;
+
   bool _initCalled = false;
   Version? _updateAvailable;
   DateTime? _lastTimeAlerted;
@@ -136,7 +139,18 @@ class Upgrader with WidgetsBindingObserver {
 
       if (state.packageInfo == null) {
         try {
-          final packageInfo = await PackageInfo.fromPlatform();
+          var packageInfo = await PackageInfo.fromPlatform();
+          /// Just CopyWith for packageName, [PackageInfo] doesn't have copyWith method.
+          packageInfo = PackageInfo(
+            appName: packageInfo.appName,
+            packageName: packageName ?? packageInfo.packageName,
+            version: packageInfo.version,
+            buildNumber: packageInfo.buildNumber,
+            buildSignature: packageInfo.buildSignature,
+            installerStore: packageInfo.installerStore,
+            installTime: packageInfo.installTime,
+            updateTime: packageInfo.updateTime,
+          );
           updateState(state.copyWith(packageInfo: packageInfo));
         } catch (e) {
           if (state.debugLogging) {
